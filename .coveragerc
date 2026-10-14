@@ -1,0 +1,10 @@
+[run]
+source = controller, model, utils
+omit =
+    utils/face_util.py
+    */test/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:

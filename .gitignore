@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# 数据库与运行时产物
+db/*.db
+db/backup/
+data/faces/
+
+# 超级管理员初始密码密文（仅开发人员可见，严禁提交）
+db/admin_secret.txt
+
+# 打包产物
+build/
+dist/
+*.spec
+
+# 测试与覆盖率
+.coverage
+htmlcov/
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/

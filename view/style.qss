@@ -1,0 +1,98 @@
+/* 微信小程序风格全局样式：微信绿主色 + 白色卡片 + 圆角 + 浅灰底 */
+
+QWidget {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    font-size: 13px;
+    color: #333333;
+    background: #f5f5f5;
+}
+
+QMainWindow, QDialog {
+    background: #f5f5f5;
+}
+
+/* 标题 */
+QLabel#title {
+    font-size: 22px;
+    font-weight: bold;
+    color: #07C160;
+}
+
+/* 主按钮 */
+QPushButton {
+    background: #07C160;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+}
+QPushButton:hover { background: #06ad56; }
+QPushButton:pressed { background: #059a4c; }
+QPushButton:disabled { background: #b8e6cc; }
+
+/* 次级按钮 */
+QPushButton#ghost {
+    background: #ffffff;
+    color: #07C160;
+    border: 1px solid #07C160;
+}
+QPushButton#ghost:hover { background: #e8f7ee; }
+
+/* 危险按钮 */
+QPushButton#danger { background: #fa5151; }
+QPushButton#danger:hover { background: #e64343; }
+
+/* 输入框 */
+QLineEdit, QTextEdit, QComboBox, QDateTimeEdit, QSpinBox, QCalendarWidget {
+    background: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 6px;
+    padding: 6px 8px;
+}
+QLineEdit:focus, QTextEdit:focus, QComboBox:focus, QDateTimeEdit:focus, QSpinBox:focus {
+    border: 1px solid #07C160;
+}
+QComboBox::drop-down { border: none; width: 20px; }
+
+/* 表格 */
+QTableWidget {
+    background: #ffffff;
+    border: 1px solid #eeeeee;
+    border-radius: 8px;
+    gridline-color: #f0f0f0;
+    selection-background-color: #e8f7ee;
+    selection-color: #333333;
+}
+QHeaderView::section {
+    background: #fafafa;
+    color: #666666;
+    border: none;
+    border-bottom: 1px solid #eeeeee;
+    padding: 8px;
+    font-weight: bold;
+}
+
+/* 导航列表 */
+QListWidget {
+    background: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 4px;
+}
+QListWidget::item {
+    padding: 12px 16px;
+    border-radius: 6px;
+    color: #333333;
+}
+QListWidget::item:selected {
+    background: #07C160;
+    color: #ffffff;
+}
+QListWidget::item:hover:!selected { background: #e8f7ee; }
+
+/* 卡片容器 */
+QFrame#card {
+    background: #ffffff;
+    border-radius: 10px;
+}

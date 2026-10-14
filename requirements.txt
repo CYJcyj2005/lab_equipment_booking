@@ -1,0 +1,9 @@
+PyQt6>=6.5
+bcrypt>=4.0
+pandas>=2.0
+flask>=3.0
+matplotlib>=3.7
+qrcode[pil]>=7.4
+# 可选：人脸识别（依赖 dlib，Windows 可能安装失败；缺失时代码自动回退手动签到）
+# opencv-python>=4.8
+# face-recognition>=1.3

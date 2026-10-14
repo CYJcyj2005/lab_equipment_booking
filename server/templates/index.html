@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>实验室设备预约</title>
+  <style>
+    :root { --green: #07C160; --bg: #f5f5f5; --card: #fff; --text: #333; --muted: #999; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); }
+    .header { background: var(--green); color: #fff; padding: 14px 16px; font-size: 18px; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+    .container { max-width: 560px; margin: 0 auto; padding: 12px; padding-bottom: 70px; }
+    .card { background: var(--card); border-radius: 10px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .card h3 { font-size: 16px; margin-bottom: 6px; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .row { display: flex; justify-content: space-between; align-items: center; }
+    .btn { background: var(--green); color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-size: 14px; cursor: pointer; }
+    .btn.ghost { background: #fff; color: var(--green); border: 1px solid var(--green); }
+    .btn.danger { background: #fa5151; }
+    .btn:disabled { opacity: .5; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 10px; background: #fff; }
+    .tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; display: flex; border-top: 1px solid #eee; z-index: 10; }
+    .tabbar button { flex: 1; background: none; border: none; padding: 10px 0; font-size: 13px; color: var(--muted); }
+    .tabbar button.active { color: var(--green); font-weight: 600; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .tag { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 4px; background: #e8f7ee; color: var(--green); }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 20; }
+    .modal .box { background: #fff; border-radius: 12px; padding: 18px; width: 90%; max-width: 400px; }
+  </style>
+</head>
+<body>
+  <div class="header">实验室设备预约</div>
+
+  <!-- 登录 -->
+  <div id="login" class="container">
+    <div class="card">
+      <h3>登录</h3>
+      <input id="login-username" placeholder="用户名">
+      <input id="login-password" type="password" placeholder="密码">
+      <button class="btn" style="width:100%" onclick="login()">登录</button>
+      <div style="height:8px"></div>
+      <button class="btn ghost" style="width:100%" onclick="register()">注册学生账号</button>
+    </div>
+    <div class="card" id="reg-box" style="display:none">
+      <h3>注册</h3>
+      <input id="reg-username" placeholder="用户名">
+      <input id="reg-password" type="password" placeholder="密码（≥6位）">
+      <input id="reg-name" placeholder="真实姓名">
+      <input id="reg-phone" placeholder="手机号">
+      <button class="btn" style="width:100%" onclick="doRegister()">提交注册</button>
+    </div>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="main" class="container" style="display:none"></div>
+
+  <!-- 底部 tab -->
+  <div class="tabbar" id="tabbar" style="display:none">
+    <button class="active" data-page="devices" onclick="switchTab('devices')">设备</button>
+    <button data-page="appointments" onclick="switchTab('appointments')">预约</button>
+    <button data-page="messages" onclick="switchTab('messages')">消息</button>
+    <button data-page="me" onclick="switchTab('me')">我的</button>
+  </div>
+
+  <!-- 预约弹窗 -->
+  <div class="modal" id="book-modal">
+    <div class="box">
+      <h3>提交预约</h3>
+      <input id="book-did" type="hidden">
+      <input id="book-start" type="datetime-local">
+      <input id="book-end" type="datetime-local">
+      <button class="btn ghost" style="width:100%" onclick="aiRecommend()">AI 智能推荐空闲时段</button>
+      <div id="recommend-box" class="muted" style="margin:8px 0"></div>
+      <div class="row">
+        <button class="btn ghost" onclick="closeModal()">取消</button>
+        <button class="btn" onclick="submitBooking()">提交</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let token = localStorage.getItem('token') || '';
+    const $ = s => document.querySelector(s);
+    const api = async (path, opts={}) => {
+      const res = await fetch('/api'+path, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer '+token, ...(opts.headers||{}) }
+      });
+      return res.json();
+    };
+    const fmt = s => (s||'').replace('T',' ').slice(0,16);
+
+    async function login() {
+      const r = await api('/login', { method:'POST', body: JSON.stringify({
+        username: $('#login-username').value, password: $('#login-password').value }) });
+      if (!r.ok) { alert(r.msg); return; }
+      token = r.data.token; localStorage.setItem('token', token);
+      enterMain();
+    }
+    async function doRegister() {
+      const r = await api('/register', { method:'POST', body: JSON.stringify({
+        username: $('#reg-username').value, password: $('#reg-password').value,
+        real_name: $('#reg-name').value, phone: $('#reg-phone').value }) });
+      alert(r.msg || r.data.msg); if (r.ok) { $('#reg-box').style.display='none'; }
+    }
+    function register() { $('#reg-box').style.display = $('#reg-box').style.display==='none' ? 'block':'none'; }
+
+    function enterMain() {
+      $('#login').style.display = 'none'; $('#main').style.display = 'block';
+      $('#tabbar').style.display = 'flex'; switchTab('devices');
+    }
+    function switchTab(name) {
+      document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.page===name));
+      loadPage(name);
+    }
+
+    async function loadPage(name) {
+      const el = $('#main');
+      if (name === 'devices') {
+        const r = await api('/devices'); if (!r.ok) return;
+        el.innerHTML = '<h3 style="margin-bottom:10px">设备列表</h3>' + r.data.map(d => `
+          <div class="card"><div class="row"><div><h3>${d.dev_name} <span class="tag">${d.status===1?'空闲':d.status===2?'占用':'不可用'}</span></h3>
+          <div class="muted">${d.dev_no} · ${d.category} · ${d.lab_name||''} · 数量 ${d.total_count||1}</div></div>
+          <button class="btn" onclick="openBook(${d.did})">预约</button></div></div>`).join('');
+      } else if (name === 'appointments') {
+        const r = await api('/appointments'); if (!r.ok) return;
+        el.innerHTML = '<h3 style="margin-bottom:10px">我的预约</h3>' + (r.data.length ? r.data.map(a => `
+          <div class="card"><div class="row"><div><h3>${a.dev_name}</h3>
+          <div class="muted">${fmt(a.start_time)} ~ ${fmt(a.end_time)} · 状态 ${a.audit_status}</div></div>
+          ${a.audit_status===1 ? `<button class="btn" onclick="sign(${a.aid})">签到</button>` : ''}
+          ${[0,1].includes(a.audit_status) ? `<button class="btn danger" onclick="cancel(${a.aid})">取消</button>` : ''}</div></div>`).join('') : '<div class="card muted">暂无预约</div>');
+      } else if (name === 'messages') {
+        const r = await api('/messages'); if (!r.ok) return;
+        el.innerHTML = '<div class="row" style="margin-bottom:10px"><h3>站内消息</h3><button class="btn ghost" onclick="readAll()">全部已读</button></div>' +
+          (r.data.length ? r.data.map(m => `<div class="card"><h3>${m.title} ${m.is_read?'':'<span class="tag">未读</span>'}</h3><div class="muted">${m.content}</div></div>`).join('') : '<div class="card muted">暂无消息</div>');
+      } else if (name === 'me') {
+        const r = await api('/appointments'); const u = await api('/messages');
+        el.innerHTML = `<div class="card"><h3>账号信息</h3><div class="muted" id="me-box">加载中…</div></div>
+          <button class="btn danger" style="width:100%" onclick="logout()">退出登录</button>`;
+      }
+    }
+
+    function openBook(did) {
+      $('#book-did').value = did; $('#book-start').value = ''; $('#book-end').value = '';
+      $('#recommend-box').innerHTML = ''; $('#book-modal').style.display = 'flex';
+    }
+    function closeModal() { $('#book-modal').style.display = 'none'; }
+    async function aiRecommend() {
+      const did = $('#book-did').value; const now = new Date();
+      const day = now.toISOString().slice(0,10);
+      const r = await api(`/recommend?did=${did}&day=${day}&duration=2`);
+      if (!r.ok) { alert(r.msg); return; }
+      $('#recommend-box').innerHTML = '推荐时段：' + r.data.map(s => `<div>${fmt(s[0])} ~ ${fmt(s[1])}</div>`).join('');
+      if (r.data[0]) { $('#book-start').value = r.data[0][0].replace(' ','T'); $('#book-end').value = r.data[0][1].replace(' ','T'); }
+    }
+    async function submitBooking() {
+      const r = await api('/appointments', { method:'POST', body: JSON.stringify({
+        did: +$('#book-did').value, start: $('#book-start').value, end: $('#book-end').value, type:'instant' }) });
+      alert(r.msg || r.data.msg); if (r.ok) { closeModal(); switchTab('appointments'); }
+    }
+    async function cancel(aid) {
+      if (!confirm('确认取消？')) return;
+      const r = await api(`/appointments/${aid}/cancel`, { method:'POST' });
+      alert(r.msg || r.data.msg); switchTab('appointments');
+    }
+    async function sign(aid) {
+      const r = await api('/sign', { method:'POST', body: JSON.stringify({ aid, method:'manual' }) });
+      alert(r.msg || r.data.msg); switchTab('appointments');
+    }
+    async function readAll() { await api('/messages/read_all', { method:'POST' }); switchTab('messages'); }
+    function logout() { localStorage.removeItem('token'); token=''; location.reload(); }
+
+    if (token) enterMain();
+  </script>
+</body>
+</html>
