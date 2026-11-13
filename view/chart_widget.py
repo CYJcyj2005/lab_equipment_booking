@@ -11,6 +11,10 @@ try:
     matplotlib.use("QtAgg")
     from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
     from matplotlib.figure import Figure
+    # 中文字体：优先微软雅黑/黑体，避免中文标签显示为方框
+    matplotlib.rcParams["font.sans-serif"] = [
+        "Microsoft YaHei", "SimHei", "SimSun", "Arial Unicode MS", "sans-serif"]
+    matplotlib.rcParams["axes.unicode_minus"] = False
     _MPL_OK = True
 except Exception:  # 缺 matplotlib 或后端不可用时降级
     _MPL_OK = False

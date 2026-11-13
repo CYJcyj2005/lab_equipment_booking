@@ -81,12 +81,15 @@ class LoginWindow(QWidget):
 
     # ---------- 记住账号 / 密码 ----------
     def _restore_saved(self) -> None:
+        # 程序化恢复时屏蔽 toggled 信号，避免弹「记住密码」风险提示（模态框会阻塞）
+        self.remember_pwd.blockSignals(True)
         last_user = self.settings.value("last_username", "", type=str)
         if last_user:
             self.username.setText(last_user)
         self.remember_pwd.setChecked(self.settings.value("remember_pwd", False, type=bool))
         if self.remember_pwd.isChecked():
             self.password.setText(self.settings.value("saved_password", "", type=str))
+        self.remember_pwd.blockSignals(False)
 
     def _save_login(self) -> None:
         if self.remember_user.isChecked():

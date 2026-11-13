@@ -19,11 +19,20 @@ from view.login_window import LoginWindow
 
 
 def _load_style(app: QApplication) -> None:
-    """加载微信风格 QSS（缺失时静默跳过）。"""
-    qss_path = os.path.join(BASE_DIR, "view", "style.qss")
-    if os.path.exists(qss_path):
-        with open(qss_path, "r", encoding="utf-8") as f:
-            app.setStyleSheet(f.read())
+    """加载微信风格 QSS（缺失时静默跳过）。
+
+    源码运行取项目 view/ 目录；打包后优先取 PyInstaller 资源目录（_MEIPASS），
+    其次取 exe 旁的 view/ 目录。
+    """
+    candidates = [os.path.join(BASE_DIR, "view", "style.qss")]
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.insert(0, os.path.join(meipass, "view", "style.qss"))
+    for qss_path in candidates:
+        if os.path.exists(qss_path):
+            with open(qss_path, "r", encoding="utf-8") as f:
+                app.setStyleSheet(f.read())
+            return
 
 
 def main() -> None:

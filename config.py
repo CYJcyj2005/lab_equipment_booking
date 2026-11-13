@@ -4,9 +4,14 @@
 import os
 import secrets
 import string
+import sys
 
-# 项目根目录（config.py 所在目录）
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# 项目根目录：打包成 exe 时取可执行文件所在目录（保证数据库/数据落在 exe 旁），
+# 源码运行时取 config.py 所在目录。
+if getattr(sys, "frozen", False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 数据库
 DB_DIR = os.path.join(BASE_DIR, "db")
