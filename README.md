@@ -36,7 +36,9 @@ lab_equipment_booking/
 ├── view/                      # 视图层（登录/学生/管理员/超管/导师 + 组件 + QSS + 图表）
 ├── server/                    # Flask 移动端（app.py + templates/index.html）
 ├── utils/                     # 工具（加密/时间/校验/导出/备份/常量/AI/人脸/物联模拟）
-└── test/                      # 单元测试 + 集成测试（57 个用例）
+├── test/                      # 单元测试 + 集成测试（57 个用例）
+├── code/                      # 实验六核心模块（lab_reservation + 39 个单元测试）
+└── hello.py                   # 实验一 Hello World 验证脚本
 ```
 
 分层约束：`View 只调用 Controller`，`Controller 只调用 Model-DAO`，`Model-DAO 直接访问 SQLite`。
@@ -88,6 +90,14 @@ cd lab_equipment_booking
 python -m unittest discover -s test -t . -v     # 57 个用例
 python -m coverage run --source=controller,model -m unittest discover -s test -t .
 python -m coverage report -m
+```
+
+核心模块（实验六、实验八）可独立运行：
+
+```bash
+cd code
+python main.py                                  # 演示完整预约闭环
+python -m unittest discover -s tests -t . -v    # 39 个单元测试
 ```
 
 ## 说明
