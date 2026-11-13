@@ -4,8 +4,13 @@
 运行：python server/app.py  （局域网手机访问 http://<本机IP>:5000）
 """
 
+import os
 import secrets
+import sys
 from functools import wraps
+
+# 直接运行 python server/app.py 时，sys.path[0] 是 server/，需补上项目根目录
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Flask, jsonify, render_template, request
 
