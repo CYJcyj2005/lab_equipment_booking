@@ -1,0 +1,452 @@
+{
+  "info": {
+    "name": "实验室设备预约系统 移动端 API",
+    "description": "实验九 集成测试：移动端 REST API 接口测试集合（14 个请求）。运行前在仓库根目录启动 python docs/api_test_server.py（127.0.0.1:5001）。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const d = new Date();",
+          "d.setDate(d.getDate() + 1);",
+          "const y = d.getFullYear();",
+          "const m = String(d.getMonth() + 1).padStart(2, '0');",
+          "const day = String(d.getDate()).padStart(2, '0');",
+          "const date = `${y}-${m}-${day}`;",
+          "pm.collectionVariables.set('day', date);",
+          "pm.collectionVariables.set('start', `${date} 08:00:00`);",
+          "pm.collectionVariables.set('end', `${date} 10:00:00`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:5001" },
+    { "key": "did", "value": "5" },
+    { "key": "day", "value": "" },
+    { "key": "start", "value": "" },
+    { "key": "end", "value": "" },
+    { "key": "tokenA", "value": "" },
+    { "key": "tokenB", "value": "" },
+    { "key": "tokenC", "value": "" },
+    { "key": "aid", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 未登录查询设备（401）",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/api/devices", "host": ["{{baseUrl}}"], "path": ["api", "devices"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('未携带 Token 返回 401', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 注册新学生",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"stuC\",\"password\":\"abc12345\",\"real_name\":\"测试学生C\",\"phone\":\"13800000003\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/register", "host": ["{{baseUrl}}"], "path": ["api", "register"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('注册成功', function () { pm.response.to.have.status(200); });",
+              "pm.test('返回注册结果', function () { pm.expect(pm.response.json().ok).to.eql(true); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 登录（学生 C）",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"username\":\"stuC\",\"password\":\"abc12345\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/login", "host": ["{{baseUrl}}"], "path": ["api", "login"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('登录成功', function () { pm.response.to.have.status(200); });",
+              "const j = pm.response.json();",
+              "pm.test('返回 token 与用户信息', function () { pm.expect(j.data.token).to.be.a('string'); });",
+              "pm.collectionVariables.set('tokenC', j.data.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 关键字查询设备",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenC}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/devices?kw=示波",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "devices"],
+          "query": [{ "key": "kw", "value": "示波" }]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('查询成功', function () { pm.response.to.have.status(200); });",
+              "pm.test('返回示波器', function () {",
+              "  const list = pm.response.json().data;",
+              "  pm.expect(list.length).to.be.above(0);",
+              "  pm.expect(list[0].dev_name).to.include('示波');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 AI 推荐空闲时段",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenC}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/recommend?did={{did}}&day={{day}}&duration=2",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "recommend"],
+          "query": [
+            { "key": "did", "value": "{{did}}" },
+            { "key": "day", "value": "{{day}}" },
+            { "key": "duration", "value": "2" }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('推荐成功', function () { pm.response.to.have.status(200); });",
+              "pm.test('返回时段数组', function () { pm.expect(pm.response.json().data).to.be.an('array'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 提交预约（第 1 台，学生 A）",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"did\":{{did}},\"start\":\"{{start}}\",\"end\":\"{{end}}\",\"type\":\"instant\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/appointments", "host": ["{{baseUrl}}"], "path": ["api", "appointments"] }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const base = pm.collectionVariables.get('baseUrl');",
+              "pm.sendRequest({",
+              "  url: base + '/api/login', method: 'POST',",
+              "  header: { 'Content-Type': 'application/json' },",
+              "  body: { mode: 'raw', raw: JSON.stringify({ username: 'stuA', password: 'abc12345' }) }",
+              "}, function (err, res) {",
+              "  if (!err && res.code === 200) pm.collectionVariables.set('tokenA', res.json().data.token);",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('第 1 台预约成功', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 提交预约（第 2 台，学生 B）",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenB}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"did\":{{did}},\"start\":\"{{start}}\",\"end\":\"{{end}}\",\"type\":\"instant\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/appointments", "host": ["{{baseUrl}}"], "path": ["api", "appointments"] }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const base = pm.collectionVariables.get('baseUrl');",
+              "pm.sendRequest({",
+              "  url: base + '/api/login', method: 'POST',",
+              "  header: { 'Content-Type': 'application/json' },",
+              "  body: { mode: 'raw', raw: JSON.stringify({ username: 'stuB', password: 'abc12345' }) }",
+              "}, function (err, res) {",
+              "  if (!err && res.code === 200) pm.collectionVariables.set('tokenB', res.json().data.token);",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('第 2 台预约成功', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 提交预约（第 3 台，超出总量）",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenC}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"did\":{{did}},\"start\":\"{{start}}\",\"end\":\"{{end}}\",\"type\":\"instant\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/appointments", "host": ["{{baseUrl}}"], "path": ["api", "appointments"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('状态码为 400', function () { pm.response.to.have.status(400); });",
+              "const j = pm.response.json();",
+              "pm.test('业务返回失败', function () { pm.expect(j.ok).to.eql(false); });",
+              "pm.test('提示该时段已约满', function () { pm.expect(j.msg).to.include('已约满'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 结束时间早于开始时间（400）",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenC}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"did\":{{did}},\"start\":\"{{start}}\",\"end\":\"{{day}} 07:00:00\",\"type\":\"instant\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/appointments", "host": ["{{baseUrl}}"], "path": ["api", "appointments"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('非法时段返回 400', function () { pm.response.to.have.status(400); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 加入候补队列",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenC}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"did\":{{did}},\"start\":\"{{start}}\",\"end\":\"{{end}}\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/waitlist", "host": ["{{baseUrl}}"], "path": ["api", "waitlist"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('候补登记成功', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 签到（管理员已审核）",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"aid\":{{aid}},\"method\":\"manual\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/sign", "host": ["{{baseUrl}}"], "path": ["api", "sign"] }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const base = pm.collectionVariables.get('baseUrl');",
+              "const token = pm.collectionVariables.get('tokenA');",
+              "pm.sendRequest({",
+              "  url: base + '/api/appointments', method: 'GET',",
+              "  header: { Authorization: 'Bearer ' + token }",
+              "}, function (err, res) {",
+              "  if (err || res.code !== 200) return;",
+              "  const list = res.json().data || [];",
+              "  const approved = list.find(function (a) { return a.audit_status === 1; });",
+              "  if (approved) pm.collectionVariables.set('aid', approved.aid);",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('签到成功', function () { pm.response.to.have.status(200); });",
+              "pm.test('门禁与电源已联动', function () { pm.expect(pm.response.json().data.msg).to.include('门禁已开'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 重复签到（400）",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"aid\":{{aid}},\"method\":\"manual\"}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/api/sign", "host": ["{{baseUrl}}"], "path": ["api", "sign"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('重复签到返回 400', function () { pm.response.to.have.status(400); });",
+              "pm.test('提示已签到', function () { pm.expect(pm.response.json().msg).to.include('已签到'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 查询我的预约列表",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+        "url": { "raw": "{{baseUrl}}/api/appointments", "host": ["{{baseUrl}}"], "path": ["api", "appointments"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('查询成功', function () { pm.response.to.have.status(200); });",
+              "pm.test('返回预约数组', function () { pm.expect(pm.response.json().data).to.be.an('array'); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 退出登录",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenC}}" }],
+        "url": { "raw": "{{baseUrl}}/api/logout", "host": ["{{baseUrl}}"], "path": ["api", "logout"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('退出成功', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
