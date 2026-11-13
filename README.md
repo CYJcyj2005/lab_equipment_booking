@@ -36,7 +36,7 @@ lab_equipment_booking/
 ├── view/                      # 视图层（登录/学生/管理员/超管/导师 + 组件 + QSS + 图表）
 ├── server/                    # Flask 移动端（app.py + templates/index.html）
 ├── utils/                     # 工具（加密/时间/校验/导出/备份/常量/AI/人脸/物联模拟）
-└── test/                      # 单元测试 + 集成测试（48 个用例）
+└── test/                      # 单元测试 + 集成测试（57 个用例）
 ```
 
 分层约束：`View 只调用 Controller`，`Controller 只调用 Model-DAO`，`Model-DAO 直接访问 SQLite`。
@@ -85,7 +85,7 @@ python server/app.py               # 启动移动端（手机访问 http://<本�
 
 ```bash
 cd lab_equipment_booking
-python -m unittest discover -s test -t . -v     # 48 个用例
+python -m unittest discover -s test -t . -v     # 57 个用例
 python -m coverage run --source=controller,model -m unittest discover -s test -t .
 python -m coverage report -m
 ```
